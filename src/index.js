@@ -1,0 +1,7 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+const test = () => {
+  console.log('Test!');
+};
+
+test();

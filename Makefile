@@ -1,29 +1,19 @@
 install:
 
-	npm install
+			npm install
 
 develop:
 
-	npm run develop
+			npm run develop
 
 build:
 
-		rm -rf dist
-		NODE_ENV=production npx webpack
-
-watch:
-
-		# rm -rf dist
-		npm run watch
-
-start:
-
-		# rm -rf dist
-		npm run start
+			rm -rf dist
+			NODE_ENV=production npx webpack
 
 test:
 
-		npm test
+			npm test
 
 lint:
 			npx eslint .

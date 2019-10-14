@@ -1,7 +1,15 @@
 import isURL from 'validator/lib/isURL';
 import { watch } from 'melanke-watchjs';
 import axios from 'axios';
-import render from './renderers';
+import _ from 'lodash';
+import { getInformation, getList } from './fixtures';
+import {
+  renderElements,
+  renderFeed,
+  renderPosts,
+  renderModalWindow,
+} from './renderers';
+
 
 export default () => {
   const state = {
@@ -9,33 +17,80 @@ export default () => {
       validity: true,
       isEmpty: true,
     },
-    alert: {
+    submitButton: {
+      disabled: true,
+    },
+    alertWindow: {
+      active: false,
       message: '',
     },
-    feed: {
-      currentFeed: null,
+    modalWindow: {
+      title: '',
+      description: '',
     },
+    feeds: [],
+    updates: [],
   };
 
-  watch(state, (change, action, value) => render({ change, value }), 1, true);
+  watch(state, ['input', 'submitButton', 'alertWindow'], (change, action, value) => renderElements(change, value));
+  watch(state, 'feeds', () => renderFeed(state), 1);
+  watch(state, 'updates', (prop, action, value) => {
+    const { url, newPosts } = value;
+    renderPosts(url, newPosts);
+  });
+
+  watch(state, 'modalWindow', () => renderModalWindow(state));
+
 
   const activeFeeds = new Set();
 
-  const getFeed = (url) => {
-    const newLink = `https://cors-anywhere.herokuapp.com/${url}`;
-    axios.get(newLink)
-      .then((response) => {
-        const parser = new DOMParser();
-        const html = parser.parseFromString(response.data, 'application/xml');
-        state.feed.currentFeed = html;
+  const getData = (url) => {
+    const proxy = 'https://cors-anywhere.herokuapp.com';
+    return axios.get(`${proxy}/${url}`).then((response) => response.data);
+  };
+
+  const parseData = (data) => {
+    const parser = new DOMParser();
+    return parser.parseFromString(data, 'application/xml');
+  };
+
+  const updateFeeds = (feeds) => {
+    feeds.forEach((feed) => {
+      const { url, list } = feed;
+      getData(url)
+        .then((data) => {
+          const html = parseData(data);
+          const updatedList = getList(html);
+          const newPosts = _.differenceWith(updatedList, list, _.isEqual);
+          const currentFeed = state.feeds.find((f) => f.url === url);
+          if (!_.isEmpty(newPosts)) {
+            state.updates.unshift({ url, newPosts });
+            currentFeed.list = [...list, ...newPosts];
+          }
+        });
+    });
+  };
+
+  const addFeed = (url) => {
+    getData(url)
+      .then((data) => {
+        const html = parseData(data);
+        const information = getInformation(html);
+        const list = getList(html).reverse();
+        state.feeds.push({ url, information, list });
       })
-      .catch((error) => console.log(error));
+      .catch((error) => {
+        state.alertWindow.message = error.message;
+      });
+
+    setInterval(updateFeeds, 5000, state.feeds);
   };
 
   const input = document.getElementById('basic-url');
   input.addEventListener('input', ({ target }) => {
     state.input.isEmpty = false;
     state.input.validity = isURL(target.value);
+    state.submitButton.disabled = !isURL(target.value);
   });
 
   const button = document.querySelector('button.btn-primary');
@@ -43,13 +98,19 @@ export default () => {
     const url = input.value;
 
     if (activeFeeds.has(url)) {
-      state.alert.message = 'Ups! this feed is allready added!';
+      state.alertWindow.message = 'Ups! this feed is allready added!';
     }
     if (state.input.validity === true && !activeFeeds.has(url)) {
-      state.alert.message = '';
+      state.alertWindow.message = '';
       state.input.isEmpty = true;
       activeFeeds.add(url);
-      getFeed(url);
+      addFeed(url);
     }
+  });
+
+
+  const closeModalButton = document.querySelector('[data-dismiss="modal"]');
+  closeModalButton.addEventListener('click', () => {
+    state.modalWindow = {};
   });
 };

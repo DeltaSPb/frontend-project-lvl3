@@ -3,9 +3,4 @@ import 'bootstrap/js/dist/modal';
 
 import app from './application';
 
-const test = () => {
-  console.log('Yaep!');
-  app();
-};
-
-test();
+app();

@@ -21,13 +21,9 @@ export default () => {
       disabled: true,
     },
     alertWindow: {
-      active: false,
-      message: '',
+      message: null,
     },
-    modalWindow: {
-      title: '',
-      description: '',
-    },
+    modalWindowContent: {},
     feeds: [],
     updates: [],
   };
@@ -38,8 +34,7 @@ export default () => {
     const { url, newPosts } = value;
     renderPosts(url, newPosts);
   });
-
-  watch(state, 'modalWindow', () => renderModalWindow(state));
+  watch(state, 'modalWindowContent', () => renderModalWindow(state));
 
 
   const activeFeeds = new Set();
@@ -54,21 +49,21 @@ export default () => {
     return parser.parseFromString(data, 'application/xml');
   };
 
-  const updateFeeds = (feeds) => {
-    feeds.forEach((feed) => {
-      const { url, list } = feed;
-      getData(url)
-        .then((data) => {
-          const html = parseData(data);
-          const updatedList = getList(html);
-          const newPosts = _.differenceWith(updatedList, list, _.isEqual);
-          const currentFeed = state.feeds.find((f) => f.url === url);
-          if (!_.isEmpty(newPosts)) {
-            state.updates.unshift({ url, newPosts });
-            currentFeed.list = [...list, ...newPosts];
-          }
-        });
-    });
+  const updateFeed = (feed) => {
+    const { url, list } = feed;
+    getData(url)
+      .then((data) => {
+        const html = parseData(data);
+        const updatedList = getList(html);
+        const newPosts = _.differenceWith(updatedList, list, _.isEqual);
+        const currentFeed = state.feeds.find((f) => f.url === url);
+        if (!_.isEmpty(newPosts)) {
+          state.updates.unshift({ url, newPosts });
+          currentFeed.list = [...list, ...newPosts];
+        }
+      })
+      .catch((err) => console.log(err))
+      .finally(() => setTimeout(() => updateFeed(feed), 5000));
   };
 
   const addFeed = (url) => {
@@ -78,12 +73,12 @@ export default () => {
         const information = getInformation(html);
         const list = getList(html).reverse();
         state.feeds.push({ url, information, list });
+        const current = _.last(state.feeds);
+        updateFeed(current);
       })
       .catch((error) => {
         state.alertWindow.message = error.message;
       });
-
-    setInterval(updateFeeds, 5000, state.feeds);
   };
 
   const input = document.getElementById('basic-url');
@@ -91,6 +86,7 @@ export default () => {
     state.input.isEmpty = false;
     state.input.validity = isURL(target.value);
     state.submitButton.disabled = !isURL(target.value);
+    state.alertWindow.message = null;
   });
 
   const button = document.querySelector('button.btn-primary');
@@ -101,13 +97,12 @@ export default () => {
       state.alertWindow.message = 'Ups! this feed is allready added!';
     }
     if (state.input.validity === true && !activeFeeds.has(url)) {
-      state.alertWindow.message = '';
+      state.alertWindow.message = null;
       state.input.isEmpty = true;
       activeFeeds.add(url);
       addFeed(url);
     }
   });
-
 
   const closeModalButton = document.querySelector('[data-dismiss="modal"]');
   closeModalButton.addEventListener('click', () => {

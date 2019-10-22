@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "develop": "webpack-dev-server --mode development --open"
+    "develop": "webpack-dev-server --open",
+    "publish": "npx surge ./dist/ ds-reader.surge.sh"
   },
   "repository": {
     "type": "git",

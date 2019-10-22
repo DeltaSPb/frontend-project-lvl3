@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import last from 'lodash/last';
 
 const inputValidation = () => {
   const input = document.getElementById('basic-url');
@@ -23,8 +23,8 @@ const disableButton = (value) => {
 
 export const renderModalWindow = (state) => {
   const modalWindow = document.getElementById('modalCenter');
-  modalWindow.querySelector('.modal-title').textContent = state.modalWindow.title || '';
-  modalWindow.querySelector('.modal-text').textContent = state.modalWindow.text || '';
+  modalWindow.querySelector('.modal-title').textContent = state.modalWindowContent.title || '';
+  modalWindow.querySelector('.modal-text').textContent = state.modalWindowContent.text || '';
 };
 
 const renderModalButton = (state) => {
@@ -37,7 +37,7 @@ const renderModalButton = (state) => {
   button.addEventListener('click', ({ target }) => {
     const text = target.parentNode.querySelector('.list-group-item-text').textContent;
     const title = target.parentNode.querySelector('.list-group-item-link').textContent;
-    state.modalWindow = { title, text };
+    state.modalWindowContent = { title, text };
   });
   return button;
 };
@@ -74,7 +74,7 @@ export const renderPosts = (url, elements, state) => {
 };
 
 export const renderFeed = (state) => {
-  const current = _.last(state.feeds);
+  const current = last(state.feeds);
   const { url, information, list } = current;
   const { description, title } = information;
 

@@ -32,12 +32,9 @@ export default () => {
   watch(state, 'feeds', () => renderFeed(state), 1);
   watch(state, 'updates', (prop, action, value) => {
     const { url, newPosts } = value;
-    renderPosts(url, newPosts);
+    renderPosts(url, newPosts, state);
   });
   watch(state, 'modalWindowContent', () => renderModalWindow(state));
-
-
-  const activeFeeds = new Set();
 
   const getData = (url) => {
     const proxy = 'https://cors-anywhere.herokuapp.com';
@@ -54,11 +51,11 @@ export default () => {
     getData(url)
       .then((data) => {
         const html = parseData(data);
-        const updatedList = getList(html);
+        const updatedList = getList(html).reverse();
         const newPosts = _.differenceWith(updatedList, list, _.isEqual);
         const currentFeed = state.feeds.find((f) => f.url === url);
         if (!_.isEmpty(newPosts)) {
-          state.updates.unshift({ url, newPosts });
+          state.updates = { url, newPosts };
           currentFeed.list = [...list, ...newPosts];
         }
       })
@@ -72,9 +69,9 @@ export default () => {
         const html = parseData(data);
         const information = getInformation(html);
         const list = getList(html).reverse();
-        state.feeds.push({ url, information, list });
-        const current = _.last(state.feeds);
-        updateFeed(current);
+        const feed = { url, information, list };
+        state.feeds = [...state.feeds, feed];
+        updateFeed(feed);
       })
       .catch((error) => {
         state.alertWindow.message = error.message;
@@ -92,20 +89,20 @@ export default () => {
   const button = document.querySelector('button.btn-primary');
   button.addEventListener('click', () => {
     const url = input.value;
+    const current = state.feeds.find((feed) => feed.url === url);
 
-    if (activeFeeds.has(url)) {
-      state.alertWindow.message = 'Ups! this feed is allready added!';
-    }
-    if (state.input.validity === true && !activeFeeds.has(url)) {
+    if (!current) {
       state.alertWindow.message = null;
       state.input.isEmpty = true;
-      activeFeeds.add(url);
+      state.submitButton.disabled = true;
       addFeed(url);
+    } else {
+      state.alertWindow.message = 'Ups! this feed is allready added!';
     }
   });
 
   const closeModalButton = document.querySelector('[data-dismiss="modal"]');
   closeModalButton.addEventListener('click', () => {
-    state.modalWindow = {};
+    state.modalWindowContent = {};
   });
 };

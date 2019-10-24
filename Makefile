@@ -1,23 +1,24 @@
 install:
 
-			npm install
+	npm install
 
 develop:
 
-			npm run develop
+	npm run develop
 
 build:
 
-			rm -rf dist
-			NODE_ENV=production npx webpack
+	rm -rf dist
+	NODE_ENV=production npx webpack
 
 publish:
 
-			npm run publish
+	npm run publish
 
 test:
 
-			npm test
+	npm test
 
 lint:
-			npx eslint .
+	
+	npx eslint .

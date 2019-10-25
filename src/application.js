@@ -43,15 +43,15 @@ export default () => {
 
   const parseData = (data) => {
     const parser = new DOMParser();
-    return parser.parseFromString(data, 'application/xml');
+    const parsedData = parser.parseFromString(data, 'application/xml');
+    return { information: getInformation(parsedData), list: getList(parsedData) };
   };
 
   const updateFeed = (feed) => {
     const { url, list } = feed;
     getData(url)
       .then((data) => {
-        const html = parseData(data);
-        const updatedList = getList(html).reverse();
+        const updatedList = parseData(data).list;
         const newPosts = _.differenceWith(updatedList, list, _.isEqual);
         const currentFeed = state.feeds.find((f) => f.url === url);
         if (!_.isEmpty(newPosts)) {
@@ -66,10 +66,7 @@ export default () => {
   const addFeed = (url) => {
     getData(url)
       .then((data) => {
-        const html = parseData(data);
-        const information = getInformation(html);
-        const list = getList(html).reverse();
-        const feed = { url, information, list };
+        const feed = { url, ...parseData(data) };
         state.feeds = [...state.feeds, feed];
         updateFeed(feed);
       })

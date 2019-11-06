@@ -9,32 +9,30 @@ import {
   renderPosts,
   renderModalWindow,
 } from './renderers';
-
+import i18 from './i18next';
 
 export default () => {
   const state = {
-    input: {
-      validity: true,
-      isEmpty: true,
-    },
-    submitButton: {
-      disabled: true,
-    },
-    alertWindow: {
-      message: null,
-    },
+    inputValidity: '',
+    inputValue: '',
+    submitButton: '',
+    alertWindowMessage: '',
     modalWindowContent: {},
     feeds: [],
     updates: [],
   };
 
-  watch(state, ['input', 'submitButton', 'alertWindow'], (change, action, value) => renderElements(change, value));
+  i18();
+
+  watch(state, ['inputValidity', 'inputValue', 'submitButton', 'alertWindowMessage'], (change, action, value) => renderElements(change, value));
   watch(state, 'feeds', () => renderFeed(state), 1);
   watch(state, 'updates', (prop, action, value) => {
     const { url, newPosts } = value;
     renderPosts(url, newPosts, state);
   });
   watch(state, 'modalWindowContent', () => renderModalWindow(state));
+
+  const urlValidity = (url) => (isURL(url) ? 'valid' : 'invalid');
 
   const getData = (url) => {
     const proxy = 'https://cors-anywhere.herokuapp.com';
@@ -71,30 +69,36 @@ export default () => {
         updateFeed(feed);
       })
       .catch((error) => {
-        state.alertWindow.message = error.message;
+        const { response } = error;
+        const typeOfError = response ? response.status : 'parsing error';
+        i18('error', typeOfError).then((translation) => {
+          state.alertWindowMessage = translation;
+        });
       });
   };
 
   const input = document.getElementById('basic-url');
   input.addEventListener('input', ({ target }) => {
-    state.input.isEmpty = false;
-    state.input.validity = isURL(target.value);
-    state.submitButton.disabled = !isURL(target.value);
-    state.alertWindow.message = null;
+    state.alertWindowMessage = '';
+    state.inputValue = 'not empty';
+    state.inputValidity = urlValidity(target.value);
+    state.submitButton = state.inputValidity === 'valid' ? 'enabled' : 'disabled';
   });
 
-  const button = document.querySelector('button.btn-primary');
-  button.addEventListener('click', () => {
+  const form = document.querySelector('.form-group');
+  form.addEventListener('submit', () => {
     const url = input.value;
     const current = state.feeds.find((feed) => feed.url === url);
 
     if (!current) {
-      state.alertWindow.message = null;
-      state.input.isEmpty = true;
-      state.submitButton.disabled = true;
+      state.alertWindowMessage = '';
+      state.inputValue = 'empty';
+      state.submitButton = 'disabled';
       addFeed(url);
     } else {
-      state.alertWindow.message = 'Ups! this feed is allready added!';
+      i18('error', 'double').then((translation) => {
+        state.alertWindowMessage = translation;
+      });
     }
   });
 

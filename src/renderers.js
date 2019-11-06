@@ -1,13 +1,28 @@
+/* eslint-disable no-param-reassign */
 import last from 'lodash/last';
+import i18 from './i18next';
 
-const inputValidation = () => {
+const rerenderInputValidity = (value) => {
   const input = document.getElementById('basic-url');
-  input.classList.toggle('is-invalid');
+  const toggle = {
+    valid: () => input.classList.remove('is-invalid'),
+    invalid: () => input.classList.add('is-invalid'),
+  };
+  return toggle[value]();
 };
 
 const inputCleaning = () => {
   const input = document.getElementById('basic-url');
   input.value = '';
+};
+
+const submitButtonAvailaility = (value) => {
+  const button = document.querySelector('button.btn-primary');
+  const toggle = {
+    disabled: () => button.setAttribute('disabled', 'true'),
+    enabled: () => button.removeAttribute('disabled'),
+  };
+  return toggle[value]();
 };
 
 const showAlert = (message) => {
@@ -16,61 +31,50 @@ const showAlert = (message) => {
   alert.classList.toggle('d-none');
 };
 
-const disableButton = (value) => {
-  const button = document.querySelector('button.btn-primary');
-  button.disabled = value;
-};
-
 export const renderModalWindow = (state) => {
   const modalWindow = document.getElementById('modalCenter');
-  modalWindow.querySelector('.modal-title').textContent = state.modalWindowContent.title || '';
-  modalWindow.querySelector('.modal-text').textContent = state.modalWindowContent.text || '';
+
+  const modatWindowTitle = modalWindow.querySelector('.title');
+  modatWindowTitle.textContent = state.modalWindowContent.title || '';
+
+  const modalWindowDescriprion = modalWindow.querySelector('.description');
+  modalWindowDescriprion.textContent = state.modalWindowContent.description || '';
 };
 
-const renderModalButton = (state) => {
+const renderDescriptionButton = (state) => {
   const button = document.createElement('button');
   button.type = 'button';
   button.classList.add('btn', 'btn-info', 'col-2');
   button.setAttribute('data-toggle', 'modal');
   button.setAttribute('data-target', '#modalCenter');
-  button.textContent = 'Show description';
+  i18('descriptionButton').then((translation) => {
+    button.textContent = translation;
+  });
   button.addEventListener('click', ({ target }) => {
-    const text = target.parentNode.querySelector('.list-group-item-text').textContent;
     const title = target.parentNode.querySelector('.list-group-item-link').textContent;
-    state.modalWindowContent = { title, text };
+    const description = target.parentNode.querySelector('.list-group-item-text').textContent;
+    state.modalWindowContent = { title, description };
   });
   return button;
 };
 
 export const renderPosts = (url, elements, state) => {
-  const ul = document.getElementById(url);
-  elements.forEach((element) => {
+  const posts = elements.map((element) => {
     const { title, description, link } = element;
-
-    const a = document.createElement('a');
-    a.href = link;
-    a.classList.add('list-group-item-link', 'col-10');
-    a.textContent = title;
 
     const li = document.createElement('li');
     li.classList.add('list-group-item');
-    li.append(a);
+    li.innerHTML = `<div class=row>
+      <a href=${link} class="list-group-item-link col-10">${title}</a>
+      <p class="list-group-item-text" hidden>${description}</p>
+    </div>`;
 
-    const btn = renderModalButton(state);
-
-    const p = document.createElement('p');
-    p.classList.add('list-group-item-text');
-    p.textContent = description;
-    p.hidden = true;
-
-    const div = document.createElement('div');
-    div.classList.add('row');
-    [a, p, btn].forEach((e) => div.append(e));
-
-    li.append(div);
-
-    ul.prepend(li);
+    const button = renderDescriptionButton(state);
+    li.lastChild.append(button);
+    return li;
   });
+  const ul = document.getElementById(url);
+  ul.prepend(...posts);
 };
 
 export const renderFeed = (state) => {
@@ -79,29 +83,23 @@ export const renderFeed = (state) => {
   const { description, title } = information;
 
   const div = document.createElement('div');
-  div.setAttribute('class', 'feed');
+  div.classList.add('feed');
+  div.innerHTML = `
+    <h2>${title}</h2>
+    <p>${description}</p>
+    <ul class="list-group" id="${url}"></ul>`;
 
-  const h2 = document.createElement('h2');
-  h2.textContent = title;
-
-  const p = document.createElement('p');
-  p.textContent = description;
-
-  const ul = document.createElement('ul');
-  ul.setAttribute('class', 'list-group');
-  ul.id = url;
-
-  [h2, p, ul].forEach((e) => div.append(e));
   const jumbotron = document.querySelector('.jumbotron');
   jumbotron.after(div);
+
   renderPosts(url, list, state);
 };
 
 const render = {
-  validity: inputValidation,
-  isEmpty: (value) => (value === true ? inputCleaning() : null),
-  disabled: (value) => disableButton(value),
-  message: (value) => showAlert(value),
+  inputValidity: (value) => rerenderInputValidity(value),
+  inputValue: (value) => (value === 'empty' ? inputCleaning() : null),
+  submitButton: (value) => submitButtonAvailaility(value),
+  alertWindowMessage: (value) => showAlert(value),
 };
 
 export const renderElements = (change, value) => render[change](value);

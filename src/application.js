@@ -22,8 +22,6 @@ export default () => {
     updates: [],
   };
 
-  i18();
-
   watch(state, ['inputValidity', 'inputValue', 'submitButton', 'alertWindowMessage'], (change, action, value) => renderElements(change, value));
   watch(state, 'feeds', () => renderFeed(state), 1);
   watch(state, 'updates', (prop, action, value) => {
@@ -71,9 +69,7 @@ export default () => {
       .catch((error) => {
         const { response } = error;
         const typeOfError = response ? response.status : 'parsing error';
-        i18('error', typeOfError).then((translation) => {
-          state.alertWindowMessage = translation;
-        });
+        state.alertWindowMessage = i18.t(`error.${typeOfError}`);
       });
   };
 
@@ -96,9 +92,7 @@ export default () => {
       state.submitButton = 'disabled';
       addFeed(url);
     } else {
-      i18('error', 'double').then((translation) => {
-        state.alertWindowMessage = translation;
-      });
+      state.alertWindowMessage = i18.t('error.double');
     }
   });
 

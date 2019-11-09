@@ -47,9 +47,7 @@ const renderDescriptionButton = (state) => {
   button.classList.add('btn', 'btn-info', 'col-2');
   button.setAttribute('data-toggle', 'modal');
   button.setAttribute('data-target', '#modalCenter');
-  i18('descriptionButton').then((translation) => {
-    button.textContent = translation;
-  });
+  button.textContent = i18.t('descriptionButton');
   button.addEventListener('click', ({ target }) => {
     const title = target.parentNode.querySelector('.list-group-item-link').textContent;
     const description = target.parentNode.querySelector('.list-group-item-text').textContent;

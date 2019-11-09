@@ -6,7 +6,7 @@ const formSubmitButton = document.querySelector('button.btn-primary');
 const formInput = document.getElementById('basic-url');
 
 const interfaceLanguageSwitcher = {
-  ru: () => {
+  'ru-RU': () => {
     formTitle.textContent = 'RSS агрегатор';
     formSubmitButton.textContent = 'Подписаться';
     formInput.placeholder = 'Введите адрес новостного источника';
@@ -49,7 +49,7 @@ i18next
   .use(LanguageDetector)
   .init({
     fallbackLng: 'en',
-    debug: true,
+    debug: false,
     resources: {
       ru: {
         translation: {

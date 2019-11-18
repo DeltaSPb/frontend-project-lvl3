@@ -2,27 +2,32 @@ import isURL from 'validator/lib/isURL';
 import { watch } from 'melanke-watchjs';
 import axios from 'axios';
 import _ from 'lodash';
-import { getInformation, getList } from './fixtures';
+import parseData from './parser';
 import {
-  renderElements,
+  veiwTranslatedInterface,
+  showAlert,
+  updateFormView,
   renderFeed,
   renderPosts,
   renderModalWindow,
 } from './renderers';
-import i18 from './i18next';
+import { i18next, initObj } from './i18/i18next';
 
 export default () => {
   const state = {
-    inputValidity: '',
-    inputValue: '',
-    submitButton: '',
-    alertWindowMessage: '',
+    userLanguage: '',
+    error: '',
+    form: {
+      status: '',
+      inputValidity: '',
+    },
     modalWindowContent: {},
     feeds: [],
     updates: [],
   };
-
-  watch(state, ['inputValidity', 'inputValue', 'submitButton', 'alertWindowMessage'], (change, action, value) => renderElements(change, value));
+  watch(state, 'form', () => updateFormView(state.form));
+  watch(state, 'userLanguage', () => veiwTranslatedInterface[state.userLanguage]());
+  watch(state, 'error', () => showAlert(state.error));
   watch(state, 'feeds', () => renderFeed(state), 1);
   watch(state, 'updates', (prop, action, value) => {
     const { url, newPosts } = value;
@@ -30,24 +35,16 @@ export default () => {
   });
   watch(state, 'modalWindowContent', () => renderModalWindow(state));
 
-  const urlValidity = (url) => (isURL(url) ? 'valid' : 'invalid');
-
-  const getData = (url) => {
+  const getParsedData = (url) => {
     const proxy = 'https://cors-anywhere.herokuapp.com';
-    return axios.get(`${proxy}/${url}`).then((response) => response.data);
-  };
-
-  const parseData = (data) => {
-    const parser = new DOMParser();
-    const parsedData = parser.parseFromString(data, 'application/xml');
-    return { information: getInformation(parsedData), list: getList(parsedData) };
+    return axios.get(`${proxy}/${url}`).then(({ data }) => parseData(data));
   };
 
   const updateFeed = (feed) => {
     const { url, list } = feed;
-    getData(url)
+    getParsedData(url)
       .then((data) => {
-        const updatedList = parseData(data).list;
+        const updatedList = data.list;
         const newPosts = _.differenceWith(updatedList, list, _.isEqual);
         const currentFeed = state.feeds.find((f) => f.url === url);
         if (!_.isEmpty(newPosts)) {
@@ -60,39 +57,47 @@ export default () => {
   };
 
   const addFeed = (url) => {
-    getData(url)
+    getParsedData(url)
       .then((data) => {
-        const feed = { url, ...parseData(data) };
+        const feed = { url, ...data };
         state.feeds = [...state.feeds, feed];
         updateFeed(feed);
       })
       .catch((error) => {
         const { response } = error;
         const typeOfError = response ? response.status : 'parsing error';
-        state.alertWindowMessage = i18.t(`error.${typeOfError}`);
+        state.error = `error.${typeOfError}`;
+      })
+      .finally(() => {
+        state.form.status = 'finished';
       });
   };
 
-  const input = document.getElementById('basic-url');
-  input.addEventListener('input', ({ target }) => {
-    state.alertWindowMessage = '';
-    state.inputValue = 'not empty';
-    state.inputValidity = urlValidity(target.value);
-    state.submitButton = state.inputValidity === 'valid' ? 'enabled' : 'disabled';
+  document.addEventListener('DOMContentLoaded', () => {
+    i18next.init(initObj);
+    const [detectedLanguage] = i18next.languages;
+    state.userLanguage = detectedLanguage;
+  });
+
+  const formInput = document.getElementById('basic-url');
+  formInput.addEventListener('input', ({ target }) => {
+    const url = target.value;
+    state.form.status = 'filling';
+    state.form.inputValidity = isURL(url) ? 'valid' : 'invalid';
+    state.error = '';
   });
 
   const form = document.querySelector('.form-group');
   form.addEventListener('submit', () => {
-    const url = input.value;
+    const url = formInput.value;
     const current = state.feeds.find((feed) => feed.url === url);
 
     if (!current) {
-      state.alertWindowMessage = '';
-      state.inputValue = 'empty';
-      state.submitButton = 'disabled';
       addFeed(url);
+      state.error = '';
+      state.form.status = 'sending';
     } else {
-      state.alertWindowMessage = i18.t('error.double');
+      state.error = 'error.double';
     }
   });
 

@@ -1,33 +1,55 @@
 /* eslint-disable no-param-reassign */
 import last from 'lodash/last';
-import i18 from './i18next';
+import { i18next } from './i18/i18next';
 
-const rerenderInputValidity = (value) => {
-  const input = document.getElementById('basic-url');
+const formTitle = document.querySelector('h1.form-title');
+const formSubmitButton = document.querySelector('button.btn-primary');
+const formInput = document.getElementById('basic-url');
+
+export const veiwTranslatedInterface = {
+  ru: () => {
+    formTitle.textContent = 'RSS агрегатор';
+    formSubmitButton.textContent = 'Подписаться';
+    formInput.placeholder = 'Введите адрес новостного источника';
+  },
+  en: () => {
+    formTitle.textContent = 'RSS reader';
+    formSubmitButton.textContent = 'Subscribe';
+    formInput.placeholder = 'Enter the feed URL';
+  },
+};
+
+const viewInputValidity = (value) => {
   const toggle = {
-    valid: () => input.classList.remove('is-invalid'),
-    invalid: () => input.classList.add('is-invalid'),
+    valid: () => formInput.classList.remove('is-invalid'),
+    invalid: () => formInput.classList.add('is-invalid'),
   };
   return toggle[value]();
 };
 
-const inputCleaning = () => {
-  const input = document.getElementById('basic-url');
-  input.value = '';
+const disableInput = () => formInput.setAttribute('disabled', 'true');
+const enableInput = () => formInput.removeAttribute('disabled');
+
+const cleanInput = () => {
+  formInput.value = '';
 };
 
-const submitButtonAvailaility = (value) => {
-  const button = document.querySelector('button.btn-primary');
-  const toggle = {
-    disabled: () => button.setAttribute('disabled', 'true'),
-    enabled: () => button.removeAttribute('disabled'),
-  };
-  return toggle[value]();
+const disableSubmitButton = () => formSubmitButton.setAttribute('disabled', 'true');
+const enableSummitButton = () => formSubmitButton.removeAttribute('disabled');
+
+const showSpinner = () => {
+  const spinner = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+  formSubmitButton.innerHTML = `${spinner} ${formSubmitButton.textContent}`;
 };
 
-const showAlert = (message) => {
+const removeSpinner = () => {
+  formSubmitButton.innerHTML = `${formSubmitButton.textContent}`;
+};
+
+export const showAlert = (errorCode) => {
   const alert = document.querySelector('.alert-danger');
-  alert.textContent = message;
+  const errorMessages = i18next.t(errorCode);
+  alert.textContent = errorMessages;
   alert.classList.toggle('d-none');
 };
 
@@ -47,7 +69,7 @@ const renderDescriptionButton = (state) => {
   button.classList.add('btn', 'btn-info', 'col-2');
   button.setAttribute('data-toggle', 'modal');
   button.setAttribute('data-target', '#modalCenter');
-  button.textContent = i18.t('descriptionButton');
+  button.textContent = i18next.t('descriptionButton');
   button.addEventListener('click', ({ target }) => {
     const title = target.parentNode.querySelector('.list-group-item-link').textContent;
     const description = target.parentNode.querySelector('.list-group-item-text').textContent;
@@ -93,11 +115,25 @@ export const renderFeed = (state) => {
   renderPosts(url, list, state);
 };
 
-const render = {
-  inputValidity: (value) => rerenderInputValidity(value),
-  inputValue: (value) => (value === 'empty' ? inputCleaning() : null),
-  submitButton: (value) => submitButtonAvailaility(value),
-  alertWindowMessage: (value) => showAlert(value),
-};
+export const updateFormView = (formState) => {
+  const { status, inputValidity } = formState;
 
-export const renderElements = (change, value) => render[change](value);
+  const statusTypes = {
+    filling: (validity) => {
+      enableInput();
+      viewInputValidity(validity);
+      return validity === 'valid' ? enableSummitButton() : disableSubmitButton();
+    },
+    sending: () => {
+      disableInput();
+      showSpinner();
+      disableSubmitButton();
+    },
+    finished: () => {
+      removeSpinner();
+      cleanInput();
+      enableInput();
+    },
+  };
+  return statusTypes[status](inputValidity);
+};

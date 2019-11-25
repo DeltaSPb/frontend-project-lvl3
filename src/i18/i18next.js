@@ -10,12 +10,18 @@ const initObj = {
   resources: {
     ru: {
       translation: {
+        title: 'RSS агрегатор',
+        submitButton: 'Подписаться',
+        inputPlaceholder: 'Введите адрес новостного источника',
         descriptionButton: 'Читать',
         error: errorMessages.ru,
       },
     },
     en: {
       translation: {
+        title: 'RSS reader',
+        submitButton: 'Subscribe',
+        inputPlaceholder: 'Enter the feed URL',
         descriptionButton: 'Show description',
         error: errorMessages.en,
       },

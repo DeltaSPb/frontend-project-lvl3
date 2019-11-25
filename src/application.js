@@ -26,7 +26,7 @@ export default () => {
     updates: [],
   };
   watch(state, 'form', () => updateFormView(state.form));
-  watch(state, 'userLanguage', () => veiwTranslatedInterface[state.userLanguage]());
+  watch(state, 'userLanguage', () => veiwTranslatedInterface(state.userLanguage));
   watch(state, 'error', () => showAlert(state.error));
   watch(state, 'feeds', () => renderFeed(state), 1);
   watch(state, 'updates', (prop, action, value) => {
@@ -40,20 +40,18 @@ export default () => {
     return axios.get(`${proxy}/${url}`).then(({ data }) => parseData(data));
   };
 
-  const updateFeed = (feed) => {
-    const { url, list } = feed;
+  const updateFeed = (url, feed) => {
     getParsedData(url)
       .then((data) => {
-        const updatedList = data.list;
-        const newPosts = _.differenceWith(updatedList, list, _.isEqual);
+        const newPosts = _.differenceWith(data.posts, feed.posts, _.isEqual);
         const currentFeed = state.feeds.find((f) => f.url === url);
         if (!_.isEmpty(newPosts)) {
           state.updates = { url, newPosts };
-          currentFeed.list = [...list, ...newPosts];
+          currentFeed.posts = [...feed.posts, ...newPosts];
         }
       })
       .catch((err) => console.log(err))
-      .finally(() => setTimeout(() => updateFeed(feed), 5000));
+      .finally(setTimeout(() => updateFeed(url, feed), 5000));
   };
 
   const addFeed = (url) => {
@@ -61,7 +59,7 @@ export default () => {
       .then((data) => {
         const feed = { url, ...data };
         state.feeds = [...state.feeds, feed];
-        updateFeed(feed);
+        updateFeed(url, feed);
       })
       .catch((error) => {
         const { response } = error;
@@ -88,8 +86,9 @@ export default () => {
   });
 
   const form = document.querySelector('.form-group');
-  form.addEventListener('submit', () => {
-    const url = formInput.value;
+  form.addEventListener('submit', ({ target }) => {
+    const formData = new FormData(target);
+    const url = formData.get('url');
     const current = state.feeds.find((feed) => feed.url === url);
 
     if (!current) {

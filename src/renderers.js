@@ -2,24 +2,29 @@
 import last from 'lodash/last';
 import { i18next } from './i18/i18next';
 
-const formTitle = document.querySelector('h1.form-title');
-const formSubmitButton = document.querySelector('button.btn-primary');
-const formInput = document.getElementById('basic-url');
 
-export const veiwTranslatedInterface = {
-  ru: () => {
-    formTitle.textContent = 'RSS агрегатор';
-    formSubmitButton.textContent = 'Подписаться';
-    formInput.placeholder = 'Введите адрес новостного источника';
-  },
-  en: () => {
-    formTitle.textContent = 'RSS reader';
-    formSubmitButton.textContent = 'Subscribe';
-    formInput.placeholder = 'Enter the feed URL';
-  },
+export const veiwTranslatedInterface = (lng) => {
+  const formTitle = document.querySelector('h1.form-title');
+  const formSubmitButton = document.querySelector('button.btn-primary');
+  const formInput = document.getElementById('basic-url');
+
+  const translation = {
+    ru: () => {
+      formTitle.textContent = i18next.t('title');
+      formSubmitButton.textContent = i18next.t('submitButton');
+      formInput.placeholder = i18next.t('inputPlaceholder');
+    },
+    en: () => {
+      formTitle.textContent = i18next.t('title');
+      formSubmitButton.textContent = i18next.t('submitButton');
+      formInput.placeholder = i18next.t('inputPlaceholder');
+    },
+  };
+  return translation[lng]();
 };
 
 const viewInputValidity = (value) => {
+  const formInput = document.getElementById('basic-url');
   const toggle = {
     valid: () => formInput.classList.remove('is-invalid'),
     invalid: () => formInput.classList.add('is-invalid'),
@@ -27,22 +32,38 @@ const viewInputValidity = (value) => {
   return toggle[value]();
 };
 
-const disableInput = () => formInput.setAttribute('disabled', 'true');
-const enableInput = () => formInput.removeAttribute('disabled');
+const disableInput = () => {
+  const formInput = document.getElementById('basic-url');
+  formInput.setAttribute('disabled', 'true');
+};
+const enableInput = () => {
+  const formInput = document.getElementById('basic-url');
+  formInput.removeAttribute('disabled');
+};
 
 const cleanInput = () => {
+  const formInput = document.getElementById('basic-url');
   formInput.value = '';
 };
 
-const disableSubmitButton = () => formSubmitButton.setAttribute('disabled', 'true');
-const enableSummitButton = () => formSubmitButton.removeAttribute('disabled');
+const disableSubmitButton = () => {
+  const formSubmitButton = document.querySelector('button.btn-primary');
+  formSubmitButton.setAttribute('disabled', 'true');
+};
+
+const enableSummitButton = () => {
+  const formSubmitButton = document.querySelector('button.btn-primary');
+  formSubmitButton.removeAttribute('disabled');
+};
 
 const showSpinner = () => {
+  const formSubmitButton = document.querySelector('button.btn-primary');
   const spinner = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
   formSubmitButton.innerHTML = `${spinner} ${formSubmitButton.textContent}`;
 };
 
 const removeSpinner = () => {
+  const formSubmitButton = document.querySelector('button.btn-primary');
   formSubmitButton.innerHTML = `${formSubmitButton.textContent}`;
 };
 
@@ -78,9 +99,9 @@ const renderDescriptionButton = (state) => {
   return button;
 };
 
-export const renderPosts = (url, elements, state) => {
-  const posts = elements.map((element) => {
-    const { title, description, link } = element;
+export const renderPosts = (url, posts, state) => {
+  const list = posts.map((post) => {
+    const { title, description, link } = post;
 
     const li = document.createElement('li');
     li.classList.add('list-group-item');
@@ -94,13 +115,17 @@ export const renderPosts = (url, elements, state) => {
     return li;
   });
   const ul = document.getElementById(url);
-  ul.prepend(...posts);
+  ul.prepend(...list);
 };
 
 export const renderFeed = (state) => {
-  const current = last(state.feeds);
-  const { url, information, list } = current;
-  const { description, title } = information;
+  const currentFeed = last(state.feeds);
+  const {
+    url,
+    description,
+    title,
+    posts,
+  } = currentFeed;
 
   const div = document.createElement('div');
   div.classList.add('feed');
@@ -112,7 +137,7 @@ export const renderFeed = (state) => {
   const jumbotron = document.querySelector('.jumbotron');
   jumbotron.after(div);
 
-  renderPosts(url, list, state);
+  renderPosts(url, posts, state);
 };
 
 export const updateFormView = (formState) => {

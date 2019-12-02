@@ -26,7 +26,7 @@ export default () => {
     updates: [],
   };
   watch(state, 'form', () => updateFormView(state.form));
-  watch(state, 'userLanguage', () => veiwTranslatedInterface(state.userLanguage));
+  watch(state, 'userLanguage', () => veiwTranslatedInterface());
   watch(state, 'error', () => showAlert(state.error));
   watch(state, 'feeds', () => renderFeed(state), 1);
   watch(state, 'updates', (prop, action, value) => {
@@ -51,7 +51,7 @@ export default () => {
         }
       })
       .catch((err) => console.log(err))
-      .finally(setTimeout(() => updateFeed(url, feed), 5000));
+      .finally(() => setTimeout(() => updateFeed(url, feed), 5000));
   };
 
   const addFeed = (url) => {

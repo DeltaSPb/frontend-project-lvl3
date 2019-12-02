@@ -3,24 +3,14 @@ import last from 'lodash/last';
 import { i18next } from './i18/i18next';
 
 
-export const veiwTranslatedInterface = (lng) => {
+export const veiwTranslatedInterface = () => {
   const formTitle = document.querySelector('h1.form-title');
   const formSubmitButton = document.querySelector('button.btn-primary');
   const formInput = document.getElementById('basic-url');
 
-  const translation = {
-    ru: () => {
-      formTitle.textContent = i18next.t('title');
-      formSubmitButton.textContent = i18next.t('submitButton');
-      formInput.placeholder = i18next.t('inputPlaceholder');
-    },
-    en: () => {
-      formTitle.textContent = i18next.t('title');
-      formSubmitButton.textContent = i18next.t('submitButton');
-      formInput.placeholder = i18next.t('inputPlaceholder');
-    },
-  };
-  return translation[lng]();
+  formTitle.textContent = i18next.t('title');
+  formSubmitButton.textContent = i18next.t('submitButton');
+  formInput.placeholder = i18next.t('inputPlaceholder');
 };
 
 const viewInputValidity = (value) => {
